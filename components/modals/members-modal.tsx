@@ -10,13 +10,35 @@ import {useModal} from "@/hooks/use-modal-store";
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
-import {Check, Copy, RefreshCcw, RefreshCw, ShieldAlert, ShieldCheck} from "lucide-react";
+import {
+    Check,
+    Copy,
+    MoreVertical,
+    RefreshCcw,
+    RefreshCw,
+    Shield,
+    ShieldAlert,
+    ShieldCheck,
+    ShieldQuestion
+} from "lucide-react";
 import {useOrigin} from "@/hooks/use-origin";
 import {useState} from "react";
 import axios from "axios";
 import {ServerWithMembersWithProfiles} from "@/types";
 import {ScrollArea} from "@/components/ui/scroll-area";
 import {UserAvatar} from "@/components/ui/user-avatar";
+
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuTrigger,
+    DropdownMenuSubTrigger,
+    DropdownMenuPortal
+} from "@/components/ui/dropdown-menu"
 
 const roleIconMap = {
     "GUEST": null,
@@ -26,6 +48,9 @@ const roleIconMap = {
 
 export const MembersModal = () => {
     const {onOpen, isOpen, onClose, type, data} = useModal()
+
+    const [loadingId, setLoadingId] = useState("")
+
     const isModalOpen = isOpen && type === "members"
     const {server} = data as { server: ServerWithMembersWithProfiles }
 
@@ -49,10 +74,63 @@ export const MembersModal = () => {
                         <div key={member.id} className="flex items-center gap-x-2 mb-6">
                             <UserAvatar src={member.profile.imageUrl} />
                             <div className="flex flex-col gap-y-1">
-                                <div className="text-xs font-semibold flex items-center">
+                                <div className="text-xs font-bold flex items-center gap-x-1">
                                     {member.profile.name}
+                                    {roleIconMap[member.role]}
                                 </div>
+                                <p className="text-xs text-zinc-500">
+                                    {member.profile.email}
+                                </p>
                             </div>
+                            {server.profileId !== member.profileId &&
+                                loadingId !== member.id && (
+                                    <div className="ml-auto">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger>
+                                                <MoreVertical className="h-4 w-4 text-zinc-500"/>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent side="left">
+                                                <DropdownMenuSub>
+                                                    <DropdownMenuSubTrigger
+                                                        className="flex items-center"
+                                                    >
+                                                        <ShieldQuestion
+                                                            className="w-4 h-4 mr-2"
+                                                        />
+                                                        <span>Role</span>
+                                                    </DropdownMenuSubTrigger>
+                                                    <DropdownMenuPortal>
+                                                        <DropdownMenuSubContent>
+                                                            <DropdownMenuItem>
+                                                                <Shield className="h-4 w-4 mr-2"/>
+                                                                Guest
+                                                                {member.role === "GUEST" && (
+                                                                    <Check
+                                                                        className="h-4 w-4 ml-auto"
+                                                                    />
+                                                                )}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem>
+                                                                <ShieldCheck className="h-4 w-4 mr-2"/>
+                                                                Moderator
+                                                                {member.role === "MODERATOR" && (
+                                                                    <Check
+                                                                        className="h-4 w-4 ml-auto"
+                                                                    />
+                                                                )}
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuSubContent>
+                                                    </DropdownMenuPortal>
+                                                </DropdownMenuSub>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem>
+                                                    Unassign
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                )
+                            }
                         </div>
                     ))}
                 </ScrollArea>
