@@ -10,9 +10,13 @@ import {useModal} from "@/hooks/use-modal-store";
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
+
+import qs from "query-string"
+import {useRouter} from "next/navigation";
+
 import {
     Check,
-    Copy,
+    Copy, Gavel, Loader2,
     MoreVertical,
     RefreshCcw,
     RefreshCw,
@@ -39,6 +43,8 @@ import {
     DropdownMenuSubTrigger,
     DropdownMenuPortal
 } from "@/components/ui/dropdown-menu"
+import {MemberRole} from "@prisma/client";
+import {router} from "next/client";
 
 const roleIconMap = {
     "GUEST": null,
@@ -47,6 +53,7 @@ const roleIconMap = {
 }
 
 export const MembersModal = () => {
+    const router = useRouter()
     const {onOpen, isOpen, onClose, type, data} = useModal()
 
     const [loadingId, setLoadingId] = useState("")
@@ -56,6 +63,49 @@ export const MembersModal = () => {
 
     // @ts-ignore
     // @ts-ignore
+
+    const onRemove = async (memberId: string) => {
+        try {
+            setLoadingId(memberId)
+            const url = qs.stringifyUrl({
+                url: `/api/members/${memberId}`,
+                query: {
+                    serverId: server?.id
+                }
+            })
+
+            const response = await axios.delete(url)
+
+            router.refresh()
+            onOpen("members", {server: response.data})
+        } catch (error) {
+            console.log (error)
+        } finally {
+            setLoadingId("")
+        }
+    }
+
+    const onRoleChange = async (memberId: string, role: MemberRole) => {
+        try {
+            setLoadingId(memberId)
+            const url = qs.stringifyUrl({
+                url: `/api/members/${memberId}`,
+                query: {
+                    serverId: server?.id,
+                }
+            })
+
+            const response = await axios.patch(url, {role})
+
+            router.refresh()
+            onOpen("members", {server: response.data})
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setLoadingId("")
+        }
+    }
+
     return (
         <Dialog open={isModalOpen} onOpenChange={onClose}>
             <DialogContent className="bg-white text-black overflow-hidden">
@@ -101,7 +151,7 @@ export const MembersModal = () => {
                                                     </DropdownMenuSubTrigger>
                                                     <DropdownMenuPortal>
                                                         <DropdownMenuSubContent>
-                                                            <DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => onRoleChange(member.id, "GUEST")}>
                                                                 <Shield className="h-4 w-4 mr-2"/>
                                                                 Guest
                                                                 {member.role === "GUEST" && (
@@ -110,7 +160,9 @@ export const MembersModal = () => {
                                                                     />
                                                                 )}
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() => onRoleChange(member.id, "MODERATOR")}
+                                                            >
                                                                 <ShieldCheck className="h-4 w-4 mr-2"/>
                                                                 Moderator
                                                                 {member.role === "MODERATOR" && (
@@ -123,14 +175,19 @@ export const MembersModal = () => {
                                                     </DropdownMenuPortal>
                                                 </DropdownMenuSub>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem>
-                                                    Unassign
+                                                <DropdownMenuItem onClick={() => onRemove(member.id)}>
+                                                    <Gavel className="h-4 w-4 mr-2"/>
+                                                    Remove
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
-                                )
-                            }
+                                )}
+                            {loadingId === member.id && (
+                                <Loader2
+                                    className="animate-spin text-zinc-500 ml-auto w-4 h-4"
+                                />
+                            )}
                         </div>
                     ))}
                 </ScrollArea>
