@@ -106,6 +106,8 @@ export const MembersModal = () => {
         }
     }
 
+    // @ts-ignore
+    // @ts-ignore
     return (
         <Dialog open={isModalOpen} onOpenChange={onClose}>
             <DialogContent className="bg-white text-black overflow-hidden">
